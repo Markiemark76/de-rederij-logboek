@@ -1,0 +1,146 @@
+.number-picker-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.number-picker {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  max-width: 300px;
+  width: 90%;
+}
+
+.picker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.picker-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #202124;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #5f6368;
+  padding: 0;
+}
+
+.picker-display {
+  margin-bottom: 1rem;
+}
+
+.picker-input {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1.5rem;
+  text-align: center;
+  border: 2px solid #e8e8e8;
+  border-radius: 4px;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.picker-input:focus {
+  outline: none;
+  border-color: #1a73e8;
+}
+
+.number-pad {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pad-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.pad-row:last-child {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.pad-row button {
+  padding: 0.75rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #202124;
+}
+
+.pad-row button:hover {
+  background: #f8f9fa;
+  border-color: #1a73e8;
+}
+
+.pad-row button:active {
+  background: #e8f0fe;
+}
+
+.action-btn {
+  background: #f0f0f0;
+  color: #5f6368;
+  font-size: 0.85rem;
+}
+
+.action-btn:hover {
+  background: #e0e0e0;
+}
+
+.zero-btn {
+  grid-column: span 1;
+}
+
+.confirm-btn {
+  background: #34a853;
+  color: white;
+  font-size: 1rem;
+  grid-column: span 1;
+}
+
+.confirm-btn:hover {
+  background: #2d7a3a;
+  border-color: #34a853;
+}
+
+.confirm-btn:active {
+  background: #1e5631;
+}
+
+@media (max-width: 480px) {
+  .number-picker {
+    width: 95%;
+    padding: 0.75rem;
+  }
+
+  .pad-row button {
+    padding: 0.6rem;
+    font-size: 1rem;
+  }
+
+  .picker-input {
+    font-size: 1.25rem;
+  }
+}
