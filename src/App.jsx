@@ -2,15 +2,18 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import LogbookForm from './components/LogbookForm';
 import LogbookList from './components/LogbookList';
+import CalendarPicker from './components/CalendarPicker';
 import InfoPage from './pages/InfoPage';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('logboek');
+  const [currentPage, setCurrentPage] = useState('planning');
   const [members, setMembers] = useState([]);
   const [logbookEntries, setLogbookEntries] = useState([]);
+  const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [reservationRefreshKey, setReservationRefreshKey] = useState(0);
 
   // Fetch members
   useEffect(() => {
@@ -47,8 +50,28 @@ function App() {
     fetchLogbook();
   }, [refreshKey]);
 
+  // Fetch reservations
+  useEffect(() => {
+    const fetchReservations = async () => {
+      try {
+        const response = await fetch('/api/reservations');
+        const result = await response.json();
+        if (result.success) {
+          setReservations(result.data);
+        }
+      } catch (err) {
+        console.error('Fout bij laden reserveringen:', err);
+      }
+    };
+    fetchReservations();
+  }, [reservationRefreshKey]);
+
   const handleEntryAdded = () => {
     setRefreshKey(prev => prev + 1);
+  };
+
+  const handleReservationCreated = () => {
+    setReservationRefreshKey(prev => prev + 1);
   };
 
   return (
@@ -59,6 +82,12 @@ function App() {
       </header>
 
       <nav className="app-nav">
+        <button
+          className={`nav-tab ${currentPage === 'planning' ? 'active' : ''}`}
+          onClick={() => setCurrentPage('planning')}
+        >
+          📅 Planning
+        </button>
         <button
           className={`nav-tab ${currentPage === 'logboek' ? 'active' : ''}`}
           onClick={() => setCurrentPage('logboek')}
@@ -75,6 +104,16 @@ function App() {
 
       <main className="app-content">
         {error && <div className="error-banner">{error}</div>}
+
+        {currentPage === 'planning' && (
+          <section className="form-section">
+            <CalendarPicker
+              members={members}
+              reservations={reservations}
+              onReservationCreated={handleReservationCreated}
+            />
+          </section>
+        )}
 
         {currentPage === 'logboek' && (
           <>

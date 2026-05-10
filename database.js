@@ -57,6 +57,19 @@ db.exec(`
     FOREIGN KEY (skipper_id) REFERENCES users(id),
     FOREIGN KEY (created_by) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS reservations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    datum_start TEXT NOT NULL,
+    datum_eind TEXT NOT NULL,
+    punten_gebruikt INTEGER NOT NULL,
+    opmerking TEXT,
+    status TEXT NOT NULL DEFAULT 'geboekt' CHECK (status IN ('geboekt', 'geannuleerd')),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
 `);
 
 const statements = {
@@ -108,6 +121,30 @@ const statements = {
   insertUser: db.prepare(`
     INSERT INTO users (email, display_name, role, shares, is_active, created_at, updated_at)
     VALUES (?, ?, ?, ?, 1, ?, ?)
+  `),
+  // Reservations
+  createReservation: db.prepare(`
+    INSERT INTO reservations (user_id, datum_start, datum_eind, punten_gebruikt, opmerking, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `),
+  getReservation: db.prepare(`
+    SELECT * FROM reservations WHERE id = ?
+  `),
+  listReservations: db.prepare(`
+    SELECT r.*, u.display_name, u.shares
+    FROM reservations r
+    JOIN users u ON u.id = r.user_id
+    WHERE r.status = 'geboekt'
+    ORDER BY r.datum_start ASC
+  `),
+  listReservationsByUser: db.prepare(`
+    SELECT * FROM reservations WHERE user_id = ? AND status = 'geboekt' ORDER BY datum_start ASC
+  `),
+  updateReservation: db.prepare(`
+    UPDATE reservations SET datum_start = ?, datum_eind = ?, punten_gebruikt = ?, opmerking = ?, updated_at = ? WHERE id = ?
+  `),
+  deleteReservation: db.prepare(`
+    UPDATE reservations SET status = 'geannuleerd', updated_at = ? WHERE id = ?
   `),
 };
 
@@ -195,6 +232,52 @@ function deleteLogbookEntry(id) {
   return true;
 }
 
+// Reservations functions
+function createReservation(reservation) {
+  const now = nowIso();
+  const result = statements.createReservation.run(
+    reservation.userId,
+    reservation.datumStart,
+    reservation.datumEind,
+    reservation.puntenGebruikt,
+    reservation.opmerking || null,
+    now,
+    now
+  );
+  return getReservation(result.lastInsertRowid);
+}
+
+function getReservation(id) {
+  return statements.getReservation.get(id) || null;
+}
+
+function listReservations() {
+  return statements.listReservations.all() || [];
+}
+
+function listReservationsByUser(userId) {
+  return statements.listReservationsByUser.all(userId) || [];
+}
+
+function updateReservation(id, reservation) {
+  const now = nowIso();
+  statements.updateReservation.run(
+    reservation.datumStart,
+    reservation.datumEind,
+    reservation.puntenGebruikt,
+    reservation.opmerking || null,
+    now,
+    id
+  );
+  return getReservation(id);
+}
+
+function deleteReservation(id) {
+  const now = nowIso();
+  statements.deleteReservation.run(now, id);
+  return true;
+}
+
 function initializeDefaultUsers() {
   const countResult = statements.countUsers.get();
   if (countResult.count === 0) {
@@ -232,6 +315,12 @@ module.exports = {
   listLogbookEntries,
   updateLogbookEntry,
   deleteLogbookEntry,
+  createReservation,
+  getReservation,
+  listReservations,
+  listReservationsByUser,
+  updateReservation,
+  deleteReservation,
 };
 
 // Initialize default users on startup

@@ -9,6 +9,12 @@ const {
   listLogbookEntries,
   updateLogbookEntry,
   deleteLogbookEntry,
+  createReservation,
+  getReservation,
+  listReservations,
+  listReservationsByUser,
+  updateReservation,
+  deleteReservation,
 } = require("./database");
 
 const PORT = process.env.PORT || 3000;
@@ -159,6 +165,80 @@ const server = http.createServer(async (req, res) => {
       try {
         deleteLogbookEntry(id);
         json(res, 200, { success: true, message: "Entry deleted" });
+      } catch (error) {
+        json(res, 500, { success: false, error: error.message });
+      }
+      return;
+    }
+  }
+
+  // Reservations endpoints
+  if (pathname === "/api/reservations") {
+    if (req.method === "GET") {
+      try {
+        const reservations = listReservations();
+        json(res, 200, { success: true, data: reservations });
+      } catch (error) {
+        json(res, 500, { success: false, error: error.message });
+      }
+      return;
+    }
+
+    if (req.method === "POST") {
+      try {
+        const body = await parseJsonBody(req);
+        const reservation = createReservation({
+          userId: body.userId,
+          datumStart: body.datumStart,
+          datumEind: body.datumEind,
+          puntenGebruikt: body.puntenGebruikt,
+          opmerking: body.opmerking,
+        });
+        json(res, 201, { success: true, data: reservation });
+      } catch (error) {
+        json(res, 400, { success: false, error: error.message });
+      }
+      return;
+    }
+  }
+
+  if (pathname.startsWith("/api/reservations/")) {
+    const id = parseInt(pathname.split("/")[3]);
+
+    if (req.method === "GET") {
+      try {
+        const reservation = getReservation(id);
+        if (!reservation) {
+          json(res, 404, { success: false, error: "Reservation not found" });
+          return;
+        }
+        json(res, 200, { success: true, data: reservation });
+      } catch (error) {
+        json(res, 500, { success: false, error: error.message });
+      }
+      return;
+    }
+
+    if (req.method === "PUT") {
+      try {
+        const body = await parseJsonBody(req);
+        const reservation = updateReservation(id, {
+          datumStart: body.datumStart,
+          datumEind: body.datumEind,
+          puntenGebruikt: body.puntenGebruikt,
+          opmerking: body.opmerking,
+        });
+        json(res, 200, { success: true, data: reservation });
+      } catch (error) {
+        json(res, 400, { success: false, error: error.message });
+      }
+      return;
+    }
+
+    if (req.method === "DELETE") {
+      try {
+        deleteReservation(id);
+        json(res, 200, { success: true, message: "Reservation cancelled" });
       } catch (error) {
         json(res, 500, { success: false, error: error.message });
       }
