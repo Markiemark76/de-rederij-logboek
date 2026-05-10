@@ -72,6 +72,58 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.date-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.date-input-wrapper:hover:not(:has(input:disabled)) {
+  border-color: #1a73e8;
+  background: #f8f9fa;
+}
+
+.date-input-wrapper:has(input:disabled) {
+  background: #f5f5f5;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.date-input-wrapper .calendar-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.date-input-wrapper input {
+  flex: 1;
+  border: none;
+  padding: 0;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.date-input-wrapper input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.date-input-wrapper input::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+.date-input-wrapper input::-webkit-outer-spin-button,
+.date-input-wrapper input::-webkit-inner-spin-button {
+  display: none;
+}
+
 .submit-button {
   background: #1a73e8;
   color: white;

@@ -10,11 +10,29 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 const db = new DatabaseSync(DB_PATH);
 db.exec("PRAGMA foreign_keys = ON;");
 
-// Migration: voeg status kolom toe als die nog niet bestaat
+// Migrations
 try {
   db.exec("ALTER TABLE logbook_entries ADD COLUMN status TEXT NOT NULL DEFAULT 'concept' CHECK (status IN ('concept', 'definitief'))");
 } catch (err) {
-  // Kolom bestaat al, geen probleem
+  // Kolom bestaat al
+}
+
+try {
+  db.exec("ALTER TABLE logbook_entries ADD COLUMN departure_date TEXT");
+} catch (err) {
+  // Kolom bestaat al
+}
+
+try {
+  db.exec("ALTER TABLE logbook_entries ADD COLUMN arrival_date TEXT");
+} catch (err) {
+  // Kolom bestaat al
+}
+
+try {
+  db.exec("ALTER TABLE logbook_entries ADD COLUMN motor_hours_diesel_refuel REAL");
+} catch (err) {
+  // Kolom bestaat al
 }
 
 db.exec(`
@@ -99,11 +117,11 @@ const statements = {
   // Logbook statements
   createLogbookEntry: db.prepare(`
     INSERT INTO logbook_entries (
-      entry_date, skipper_id, crew_members,
-      wind_force, motor_hours_start, motor_hours_end, departure_port, arrival_port,
-      diesel_taken, water_remaining, diesel_remaining,
+      entry_date, skipper_id,
+      motor_hours_start, motor_hours_end, departure_date, arrival_date,
+      diesel_taken, motor_hours_diesel_refuel, water_remaining, diesel_remaining,
       damage, notes, status, created_by, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   getLogbookEntry: db.prepare(`
     SELECT * FROM logbook_entries WHERE id = ?
@@ -117,8 +135,8 @@ const statements = {
   updateLogbookEntry: db.prepare(`
     UPDATE logbook_entries SET
       entry_date = ?, skipper_id = ?,
-      crew_members = ?, wind_force = ?, motor_hours_start = ?, motor_hours_end = ?,
-      departure_port = ?, arrival_port = ?, diesel_taken = ?,
+      motor_hours_start = ?, motor_hours_end = ?,
+      departure_date = ?, arrival_date = ?, diesel_taken = ?, motor_hours_diesel_refuel = ?,
       water_remaining = ?, diesel_remaining = ?, damage = ?, notes = ?, status = ?,
       updated_at = ?
     WHERE id = ?
@@ -187,13 +205,12 @@ function createLogbookEntry(entry) {
   const result = statements.createLogbookEntry.run(
     entry.entryDate,
     entry.skipperId,
-    entry.crewMembers || null,
-    entry.windForce || null,
     entry.motorHoursStart || null,
     entry.motorHoursEnd || null,
-    entry.departurePort || null,
-    entry.arrivalPort || null,
+    entry.departureDate || null,
+    entry.arrivalDate || null,
     entry.dieselTaken || null,
+    entry.motorHoursDieselRefuel || null,
     entry.waterRemaining || null,
     entry.dieselRemaining || null,
     entry.damage || null,
@@ -219,13 +236,12 @@ function updateLogbookEntry(id, entry) {
   statements.updateLogbookEntry.run(
     entry.entryDate,
     entry.skipperId,
-    entry.crewMembers || null,
-    entry.windForce || null,
     entry.motorHoursStart || null,
     entry.motorHoursEnd || null,
-    entry.departurePort || null,
-    entry.arrivalPort || null,
+    entry.departureDate || null,
+    entry.arrivalDate || null,
     entry.dieselTaken || null,
+    entry.motorHoursDieselRefuel || null,
     entry.waterRemaining || null,
     entry.dieselRemaining || null,
     entry.damage || null,

@@ -51,6 +51,7 @@ const CHECKLIST_SECTIONS = [
 function ChecklistModal({ isOpen, onClose, onSave }) {
   const [checkedItems, setCheckedItems] = useState({});
   const [notes, setNotes] = useState('');
+  const [expandedHelp, setExpandedHelp] = useState({});
 
   useEffect(() => {
     if (isOpen) {
@@ -63,6 +64,7 @@ function ChecklistModal({ isOpen, onClose, onSave }) {
       });
       setCheckedItems(initial);
       setNotes('');
+      setExpandedHelp({});
     }
   }, [isOpen]);
 
@@ -70,6 +72,13 @@ function ChecklistModal({ isOpen, onClose, onSave }) {
     setCheckedItems(prev => ({
       ...prev,
       [itemId]: status,
+    }));
+  };
+
+  const toggleHelpText = (itemId) => {
+    setExpandedHelp(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId],
     }));
   };
 
@@ -116,32 +125,29 @@ function ChecklistModal({ isOpen, onClose, onSave }) {
               <div className="checklist-items">
                 {section.items.map(item => (
                   <div key={item.id} className="checklist-item">
-                    <div className="item-content">
-                      <span className="item-label">{item.label}</span>
-                      <span className="item-help">{item.help}</span>
-                    </div>
-                    <div className="item-buttons">
-                      <label className="status-radio">
+                    <div className="item-header">
+                      <div className="item-label-wrapper">
+                        <span className="item-label">{item.label}</span>
+                        <button
+                          className="help-toggle"
+                          onClick={() => toggleHelpText(item.id)}
+                          title="Meer informatie"
+                        >
+                          ⓘ
+                        </button>
+                      </div>
+                      <label className="toggle-switch">
                         <input
-                          type="radio"
-                          name={item.id}
-                          value="done"
+                          type="checkbox"
                           checked={checkedItems[item.id] === 'done'}
-                          onChange={() => setItemStatus(item.id, 'done')}
+                          onChange={(e) => setItemStatus(item.id, e.target.checked ? 'done' : 'not-done')}
                         />
-                        <span>Gedaan</span>
-                      </label>
-                      <label className="status-radio">
-                        <input
-                          type="radio"
-                          name={item.id}
-                          value="not-done"
-                          checked={checkedItems[item.id] === 'not-done'}
-                          onChange={() => setItemStatus(item.id, 'not-done')}
-                        />
-                        <span>Niet gedaan</span>
+                        <span className="slider"></span>
                       </label>
                     </div>
+                    {expandedHelp[item.id] && (
+                      <div className="item-help-expanded">{item.help}</div>
+                    )}
                   </div>
                 ))}
               </div>

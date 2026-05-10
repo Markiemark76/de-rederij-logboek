@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './LogbookForm.css';
 import ChecklistModal from './ChecklistModal';
+import NumberPicker from './NumberPicker';
 
 const PORTS = [
   'Colijnsplaat',
@@ -24,13 +25,12 @@ function LogbookForm({ members, onEntryAdded }) {
   const [formData, setFormData] = useState({
     entryDate: new Date().toISOString().split('T')[0],
     skipperId: '',
-    crewMembers: '',
-    windForce: '3',
     motorHoursStart: '',
     motorHoursEnd: '',
-    departurePort: '',
-    arrivalPort: '',
+    departureDate: '',
+    arrivalDate: '',
     dieselTaken: '',
+    motorHoursDieselRefuel: '',
     waterRemaining: '',
     dieselRemaining: '',
     damage: '',
@@ -38,14 +38,86 @@ function LogbookForm({ members, onEntryAdded }) {
   });
 
   const [entryId, setEntryId] = useState(null);
-  const [status, setStatus] = useState('concept');
+  const [status, setStatus] = useState(null);
   const [lastSaved, setLastSaved] = useState(null);
   const [saving, setSaving] = useState(false);
   const [autoSaving, setAutoSaving] = useState(false);
   const [error, setError] = useState(null);
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
+  const [activePicker, setActivePicker] = useState(null);
 
-  // Auto-save interval effect
+  // Load most recent CONCEPT entry on mount
+  useEffect(() => {
+    const loadRecentConcept = async () => {
+      try {
+        const response = await fetch('/api/logbook');
+        const result = await response.json();
+
+        if (result.success && result.data.length > 0) {
+          // Find most recent CONCEPT entry (sorted by updated_at DESC)
+          const conceptEntry = result.data
+            .filter(e => e.status === 'concept')
+            .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
+
+          if (conceptEntry) {
+            setEntryId(conceptEntry.id);
+            setStatus('concept');
+            setLastSaved(new Date(conceptEntry.updated_at));
+            setFormData({
+              entryDate: conceptEntry.entry_date || new Date().toISOString().split('T')[0],
+              skipperId: conceptEntry.skipper_id?.toString() || '',
+              motorHoursStart: conceptEntry.motor_hours_start || '',
+              motorHoursEnd: conceptEntry.motor_hours_end || '',
+              departureDate: conceptEntry.departure_date || '',
+              arrivalDate: conceptEntry.arrival_date || '',
+              dieselTaken: conceptEntry.diesel_taken || '',
+              motorHoursDieselRefuel: conceptEntry.motor_hours_diesel_refuel || '',
+              waterRemaining: conceptEntry.water_remaining || '',
+              dieselRemaining: conceptEntry.diesel_remaining || '',
+              damage: conceptEntry.damage || '',
+              notes: conceptEntry.notes || '',
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Fout bij laden concept entry:', err);
+      }
+    };
+
+    loadRecentConcept();
+  }, []);
+
+  // Auto-fill motorHoursStart from last entry when creating new entry
+  useEffect(() => {
+    if (entryId) return; // Only for new entries
+
+    const loadLastMotorHours = async () => {
+      try {
+        const response = await fetch('/api/logbook');
+        const result = await response.json();
+
+        if (result.success && result.data.length > 0) {
+          // Find most recent DEFINITIEF entry with motor_hours_end
+          const lastEntry = result.data
+            .filter(e => e.status === 'definitief' && e.motor_hours_end)
+            .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
+
+          if (lastEntry) {
+            setFormData(prev => ({
+              ...prev,
+              motorHoursStart: lastEntry.motor_hours_end.toString(),
+            }));
+          }
+        }
+      } catch (err) {
+        console.error('Fout bij laden motor hours:', err);
+      }
+    };
+
+    loadLastMotorHours();
+  }, [entryId]);
+
+// Auto-save interval effect
   useEffect(() => {
     if (status !== 'concept' || !entryId) return;
 
@@ -148,11 +220,18 @@ function LogbookForm({ members, onEntryAdded }) {
     }
   };
 
-  const handleFinalize = async () => {
+  const handleMakeDefinitive = async () => {
     if (!entryId) {
-      setError('Sla eerst op voordat je afrondt');
+      setError('Sla eerst op voordat je definiteef maakt');
       return;
     }
+
+    // Bevestigings-dialog
+    const confirmed = window.confirm(
+      'Weet je zeker dat je dit logboek wil inleveren?\n\nJe kunt het daarna niet meer wijzigen.'
+    );
+
+    if (!confirmed) return;
 
     setSaving(true);
     setError(null);
@@ -170,9 +249,8 @@ function LogbookForm({ members, onEntryAdded }) {
       const result = await response.json();
       if (result.success) {
         setStatus('definitief');
-        setChecklistModalOpen(true);
       } else {
-        setError(result.error || 'Fout bij afronden');
+        setError(result.error || 'Fout bij inleveren');
       }
     } catch (err) {
       console.error('Error:', err);
@@ -189,51 +267,83 @@ function LogbookForm({ members, onEntryAdded }) {
     onEntryAdded();
   };
 
+  const handleDeleteConcept = async () => {
+    if (!entryId) return;
+
+    const confirmed = window.confirm(
+      'Dit concept verwijderen? Dit kan niet ongedaan gemaakt worden.'
+    );
+
+    if (!confirmed) return;
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/logbook/${entryId}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        resetForm();
+      } else {
+        setError(result.error || 'Fout bij verwijderen');
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      setError('Kan niet verbinden met server');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       entryDate: new Date().toISOString().split('T')[0],
       skipperId: '',
-      crewMembers: '',
-      windForce: '3',
       motorHoursStart: '',
       motorHoursEnd: '',
-      departurePort: '',
-      arrivalPort: '',
+      departureDate: '',
+      arrivalDate: '',
       dieselTaken: '',
+      motorHoursDieselRefuel: '',
       waterRemaining: '',
       dieselRemaining: '',
       damage: '',
       notes: '',
     });
     setEntryId(null);
-    setStatus('concept');
+    setStatus(null);
     setLastSaved(null);
     setError(null);
   };
 
   return (
     <div className="logbook-form">
-      {/* Status indicator bar */}
-      <div style={{
-        backgroundColor: status === 'concept' ? '#e3f2fd' : '#e8f5e9',
-        borderLeft: `4px solid ${status === 'concept' ? '#2196f3' : '#4caf50'}`,
-        padding: '12px',
-        marginBottom: '16px',
-        borderRadius: '4px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-      }}>
-        <div>
-          <strong>{status === 'concept' ? '✏️ CONCEPT' : '✅ DEFINITIEF'}</strong>
-          {status === 'concept' && autoSaving && ' (Auto-save bezig...)'}
-          {status === 'concept' && !autoSaving && lastSaved && (
-            <span style={{ fontSize: '12px', color: '#666', marginLeft: '8px' }}>
-              Laatst opgeslagen: {lastSaved.toLocaleTimeString('nl-NL')}
-            </span>
-          )}
+      {/* Status indicator bar - only show after first save */}
+      {status && (
+        <div style={{
+          backgroundColor: status === 'concept' ? '#e3f2fd' : '#e8f5e9',
+          borderLeft: `4px solid ${status === 'concept' ? '#2196f3' : '#4caf50'}`,
+          padding: '12px',
+          marginBottom: '16px',
+          borderRadius: '4px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <div>
+            <strong>{status === 'concept' ? '✏️ CONCEPT' : '✅ DEFINITIEF'}</strong>
+            {status === 'concept' && autoSaving && ' (Auto-save bezig...)'}
+            {status === 'concept' && !autoSaving && lastSaved && (
+              <span style={{ fontSize: '12px', color: '#666', marginLeft: '8px' }}>
+                Laatst opgeslagen: {lastSaved.toLocaleTimeString('nl-NL')}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {error && (
         <div style={{
@@ -250,19 +360,6 @@ function LogbookForm({ members, onEntryAdded }) {
 
       <form className="logbook-form">
         <div className="form-grid">
-          <div className="form-group">
-            <label htmlFor="entryDate">Datum *</label>
-            <input
-              id="entryDate"
-              name="entryDate"
-              type="date"
-              value={formData.entryDate}
-              onChange={handleChange}
-              disabled={status === 'definitief'}
-              required
-            />
-          </div>
-
           <div className="form-group">
             <label htmlFor="skipperId">Schipper *</label>
             <select
@@ -283,135 +380,181 @@ function LogbookForm({ members, onEntryAdded }) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="windForce">Windkracht *</label>
+            <label htmlFor="departureDate">Vertrekdag *</label>
+            <div className="date-input-wrapper" onClick={() => document.getElementById('departureDate')?.showPicker()}>
+              <span className="calendar-icon">📅</span>
+              <input
+                id="departureDate"
+                name="departureDate"
+                type="date"
+                value={formData.departureDate}
+                onChange={handleChange}
+                disabled={status === 'definitief'}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="arrivalDate">Aankomstdag *</label>
+            <div className="date-input-wrapper" onClick={() => document.getElementById('arrivalDate')?.showPicker()}>
+              <span className="calendar-icon">📅</span>
+              <input
+                id="arrivalDate"
+                name="arrivalDate"
+                type="date"
+                value={formData.arrivalDate}
+                onChange={handleChange}
+                disabled={status === 'definitief'}
+                required
+              />
+            </div>
+          </div>
+
+          {formData.departureDate && formData.arrivalDate && (
+            <div className="form-group">
+              <label>Gezeilde dagen</label>
+              <div style={{
+                padding: '10px',
+                backgroundColor: '#e3f2fd',
+                borderRadius: '4px',
+                fontWeight: 'bold',
+              }}>
+                {Math.max(0, Math.ceil((new Date(formData.arrivalDate) - new Date(formData.departureDate)) / (1000 * 60 * 60 * 24)) + 1)} dag(en)
+              </div>
+            </div>
+          )}
+
+          <div className="form-group">
+            <label htmlFor="motorHoursStart">Motoruren bij vertrek</label>
+            <div
+              id="motorHoursStart"
+              onClick={() => setActivePicker('motorHoursStart')}
+              style={{
+                padding: '10px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                cursor: status === 'definitief' ? 'not-allowed' : 'pointer',
+                backgroundColor: status === 'definitief' ? '#f5f5f5' : 'white',
+                opacity: status === 'definitief' ? 0.6 : 1,
+                minHeight: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                fontSize: '1rem',
+                fontWeight: '500',
+              }}
+            >
+              {formData.motorHoursStart || '—'}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="motorHoursEnd">Motoruren bij aankomst</label>
+            <div
+              id="motorHoursEnd"
+              onClick={() => setActivePicker('motorHoursEnd')}
+              style={{
+                padding: '10px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                cursor: status === 'definitief' ? 'not-allowed' : 'pointer',
+                backgroundColor: status === 'definitief' ? '#f5f5f5' : 'white',
+                opacity: status === 'definitief' ? 0.6 : 1,
+                minHeight: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                fontSize: '1rem',
+                fontWeight: '500',
+              }}
+            >
+              {formData.motorHoursEnd || '—'}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="dieselTaken">Diesel getankt (L)</label>
+            <div
+              id="dieselTaken"
+              onClick={() => setActivePicker('dieselTaken')}
+              style={{
+                padding: '10px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                cursor: status === 'definitief' ? 'not-allowed' : 'pointer',
+                backgroundColor: status === 'definitief' ? '#f5f5f5' : 'white',
+                opacity: status === 'definitief' ? 0.6 : 1,
+                minHeight: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                fontSize: '1rem',
+                fontWeight: '500',
+              }}
+            >
+              {formData.dieselTaken || '—'}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="motorHoursDieselRefuel">Motoruren na tanken</label>
+            <div
+              id="motorHoursDieselRefuel"
+              onClick={() => setActivePicker('motorHoursDieselRefuel')}
+              style={{
+                padding: '10px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                cursor: status === 'definitief' ? 'not-allowed' : 'pointer',
+                backgroundColor: status === 'definitief' ? '#f5f5f5' : 'white',
+                opacity: status === 'definitief' ? 0.6 : 1,
+                minHeight: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                fontSize: '1rem',
+                fontWeight: '500',
+              }}
+            >
+              {formData.motorHoursDieselRefuel || '—'}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="waterRemaining">Water bij vertrek van boord</label>
             <select
-              id="windForce"
-              name="windForce"
-              value={formData.windForce}
+              id="waterRemaining"
+              name="waterRemaining"
+              value={formData.waterRemaining}
               onChange={handleChange}
               disabled={status === 'definitief'}
-              required
             >
-              <option value="0">0 Bft - Windstil</option>
-              <option value="1">1 Bft - Zeer zwak</option>
-              <option value="2">2 Bft - Zwak</option>
-              <option value="3">3 Bft - Zwak</option>
-              <option value="4">4 Bft - Matig</option>
-              <option value="5">5 Bft - Matig</option>
-              <option value="6">6 Bft - Vrij krachtig</option>
-              <option value="7">7 Bft - Krachtig</option>
+              <option value="">— Kies percentage —</option>
+              <option value="20">20%</option>
+              <option value="40">40%</option>
+              <option value="60">60%</option>
+              <option value="80">80%</option>
+              <option value="100">100%</option>
             </select>
           </div>
 
           <div className="form-group">
-            <label htmlFor="departurePort">Vertrekhaven *</label>
-            <input
-              id="departurePort"
-              name="departurePort"
-              type="text"
-              value={formData.departurePort}
-              onChange={handleChange}
-              placeholder="bijv. Colijnsplaat"
-              disabled={status === 'definitief'}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="arrivalPort">Aankomsthaven *</label>
-            <input
-              id="arrivalPort"
-              name="arrivalPort"
-              type="text"
-              value={formData.arrivalPort}
-              onChange={handleChange}
-              placeholder="bijv. Zierikzee"
-              disabled={status === 'definitief'}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="motorHoursStart">Motoruren start</label>
-            <input
-              id="motorHoursStart"
-              name="motorHoursStart"
-              type="number"
-              step="0.1"
-              value={formData.motorHoursStart}
-              onChange={handleChange}
-              disabled={status === 'definitief'}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="motorHoursEnd">Motoruren eind</label>
-            <input
-              id="motorHoursEnd"
-              name="motorHoursEnd"
-              type="number"
-              step="0.1"
-              value={formData.motorHoursEnd}
-              onChange={handleChange}
-              disabled={status === 'definitief'}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="dieselTaken">Diesel genomen (L)</label>
-            <input
-              id="dieselTaken"
-              name="dieselTaken"
-              type="number"
-              step="1"
-              value={formData.dieselTaken}
-              onChange={handleChange}
-              disabled={status === 'definitief'}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="waterRemaining">Water voorraad eind (%)</label>
-            <input
-              id="waterRemaining"
-              name="waterRemaining"
-              type="number"
-              min="0"
-              max="100"
-              value={formData.waterRemaining}
-              onChange={handleChange}
-              disabled={status === 'definitief'}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="dieselRemaining">Diesel voorraad eind (%)</label>
-            <input
+            <label htmlFor="dieselRemaining">Diesel bij vertrek van boord</label>
+            <select
               id="dieselRemaining"
               name="dieselRemaining"
-              type="text"
-              placeholder="bijv. 75%"
               value={formData.dieselRemaining}
               onChange={handleChange}
               disabled={status === 'definitief'}
-            />
+            >
+              <option value="">— Kies percentage —</option>
+              <option value="20">20%</option>
+              <option value="40">40%</option>
+              <option value="60">60%</option>
+              <option value="80">80%</option>
+              <option value="100">100%</option>
+            </select>
           </div>
 
-          <div className="form-group full-width">
-            <label htmlFor="crewMembers">Bemanningsleden</label>
-            <input
-              id="crewMembers"
-              name="crewMembers"
-              type="text"
-              placeholder="Namen gescheiden door komma"
-              value={formData.crewMembers}
-              onChange={handleChange}
-              disabled={status === 'definitief'}
-            />
-          </div>
-
-          <div className="form-group full-width">
-            <label htmlFor="damage">Schade</label>
+<div className="form-group full-width">
+            <label htmlFor="damage">Meldingen schade/onderhoud</label>
             <textarea
               id="damage"
               name="damage"
@@ -438,24 +581,36 @@ function LogbookForm({ members, onEntryAdded }) {
         </div>
 
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-          {status === 'concept' && (
+          {(!status || status === 'concept') && (
             <>
+              {entryId && status === 'concept' && (
+                <button
+                  type="button"
+                  className="submit-button"
+                  style={{ backgroundColor: '#d32f2f' }}
+                  onClick={handleDeleteConcept}
+                  disabled={saving}
+                  title="Verwijder dit concept"
+                >
+                  🗑️ Verwijderen
+                </button>
+              )}
               <button
                 type="button"
                 className="submit-button"
                 style={{ backgroundColor: '#34a853' }}
-                onClick={handleFinalize}
+                onClick={handleMakeDefinitive}
                 disabled={!entryId || saving}
               >
-                {saving ? 'Afronden...' : '✅ Afronden & Checklist'}
+                {saving ? '⏳ Inleveren...' : '✅ Definitief opslaan'}
               </button>
               <button
                 type="button"
                 className="submit-button"
                 onClick={handleSave}
-                disabled={saving || autoSaving}
+                disabled={saving}
               >
-                {saving || autoSaving ? 'Opslaan...' : '💾 Nu opslaan'}
+                {saving ? '⏳ Opslaan...' : '💾 Concept opslaan'}
               </button>
             </>
           )}
@@ -463,10 +618,10 @@ function LogbookForm({ members, onEntryAdded }) {
             <button
               type="button"
               className="submit-button"
-              style={{ backgroundColor: '#999', cursor: 'not-allowed' }}
-              disabled
+              style={{ backgroundColor: '#34a853' }}
+              onClick={() => setChecklistModalOpen(true)}
             >
-              ✅ Afgerond
+              ✅ Checklist invullen
             </button>
           )}
         </div>
@@ -483,6 +638,26 @@ function LogbookForm({ members, onEntryAdded }) {
           </div>
         )}
       </form>
+
+      {activePicker && (
+        <NumberPicker
+          value={formData[activePicker]}
+          onChange={(val) => {
+            setFormData(prev => ({
+              ...prev,
+              [activePicker]: val,
+            }));
+          }}
+          onClose={() => setActivePicker(null)}
+          label={
+            activePicker === 'motorHoursStart' ? 'Motoruren bij vertrek' :
+            activePicker === 'motorHoursEnd' ? 'Motoruren bij aankomst' :
+            activePicker === 'motorHoursDieselRefuel' ? 'Motoruren na tanken' :
+            activePicker === 'dieselTaken' ? 'Diesel getankt (L)' :
+            'Getal invoeren'
+          }
+        />
+      )}
 
       <ChecklistModal
         isOpen={checklistModalOpen}
