@@ -1,8 +1,5 @@
 .calendar-picker {
   background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 20px;
 }
 
 .calendar-picker h2 {
@@ -51,6 +48,8 @@
   flex-direction: column;
   gap: 15px;
   margin-bottom: 20px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .calendar-header {
@@ -88,6 +87,7 @@
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
   margin-bottom: 15px;
+  min-width: 100%;
 }
 
 .day-header {
@@ -331,123 +331,142 @@
 /* Responsive - MOBIEL */
 @media (max-width: 768px) {
   .calendar-picker {
-    padding: 15px;
+    padding: 0;
+    background: transparent;
   }
 
   .calendar-picker h2 {
-    font-size: 18px;
-    margin-bottom: 15px;
+    font-size: 16px;
+    margin-bottom: 12px;
+    padding: 12px 8px 0 8px;
   }
 
   .member-selector {
-    margin-bottom: 15px;
+    margin-bottom: 12px;
+    padding: 0 8px;
   }
 
   .member-selector label {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .member-selector select {
-    font-size: 13px;
-    padding: 7px;
+    font-size: 12px;
+    padding: 6px;
   }
 
-  /* Kalender compacter */
+  /* Kalender FULL WIDTH */
+  .picker-calendar {
+    padding: 4px;
+    margin: 0 -8px;
+  }
+
+  .calendar-header {
+    margin-bottom: 8px;
+    gap: 8px;
+    padding: 0 4px;
+  }
+
+  .calendar-header h3 {
+    font-size: 14px;
+    min-width: 100px;
+  }
+
+  .calendar-header button {
+    padding: 4px 8px;
+    font-size: 13px;
+  }
+
   .calendar-grid {
-    gap: 4px;
-    margin-bottom: 10px;
+    gap: 2px;
+    margin-bottom: 8px;
+    padding: 0 4px;
   }
 
   .day-header {
-    font-size: 11px;
+    font-size: 10px;
     padding: 4px 0;
     font-weight: 600;
   }
 
   .calendar-day {
     aspect-ratio: 1;
+    border: 1px solid #ddd;
     border-radius: 3px;
-    font-size: 11px;
+    padding: 0;
+    min-width: 42px;
+    min-height: 42px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 
   .day-number {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
   }
 
   .day-points,
   .day-skipper {
-    font-size: 8px;
+    font-size: 7px;
     margin-top: 1px;
+    line-height: 1;
   }
 
   .calendar-legend {
-    gap: 10px;
-    padding: 8px;
-    font-size: 11px;
+    gap: 8px;
+    padding: 6px;
+    font-size: 10px;
   }
 
   .legend-box {
-    width: 16px;
-    height: 16px;
-  }
-
-  .calendar-header {
-    margin-bottom: 8px;
-  }
-
-  .calendar-header h3 {
-    font-size: 16px;
-    min-width: 120px;
-  }
-
-  .calendar-header button {
-    padding: 4px 8px;
-    font-size: 14px;
+    width: 14px;
+    height: 14px;
   }
 
   .selection-summary {
-    flex-direction: column;
-    gap: 8px;
-    padding: 10px;
-    font-size: 13px;
-    margin-bottom: 12px;
+    flex-direction: row;
+    gap: 12px;
+    padding: 8px;
+    font-size: 12px;
+    margin: 8px 0;
   }
 
   .member-details {
-    padding: 12px;
-    gap: 12px;
-    margin-top: 15px;
+    padding: 12px 8px;
+    gap: 10px;
+    margin-top: 8px;
+    background: transparent;
+    border: none;
   }
 
   .member-info {
-    padding: 10px;
-    font-size: 13px;
+    padding: 8px;
+    font-size: 12px;
   }
 
   .member-info p {
-    margin: 3px 0;
+    margin: 2px 0;
   }
 
   .notes-section label {
-    font-size: 13px;
-    margin-bottom: 4px;
+    font-size: 12px;
   }
 
   .notes-section textarea {
-    font-size: 12px;
-    padding: 6px;
-    rows: 2;
+    font-size: 11px;
+    padding: 5px;
   }
 
   .action-buttons {
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
   }
 
   .btn-reserve,
   .btn-clear {
-    padding: 10px 16px;
-    font-size: 13px;
+    padding: 8px 12px;
+    font-size: 12px;
   }
 }

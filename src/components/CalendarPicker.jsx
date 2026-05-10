@@ -179,6 +179,7 @@ export default function CalendarPicker({ members, reservations, onReservationCre
               const isSelected = selectedDays.includes(dateStr);
               const pointsForDay = getPointsForDay(dateStr);
               const bookedByName = bookedDaysMap[dateStr];
+              const bookedByFirstName = bookedByName ? bookedByName.split(" ")[0] : "";
 
               return (
                 <button
@@ -194,7 +195,7 @@ export default function CalendarPicker({ members, reservations, onReservationCre
                 >
                   <span className="day-number">{day}</span>
                   {isBooked ? (
-                    <span className="day-skipper">{bookedByName}</span>
+                    <span className="day-skipper">{bookedByFirstName}</span>
                   ) : (
                     <span className="day-points">{pointsForDay}</span>
                   )}

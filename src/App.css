@@ -137,10 +137,17 @@ body {
 
 @media (max-width: 768px) {
   .app-content {
-    padding: 1rem;
+    padding: 0;
   }
 
-  .form-section,
+  .form-section {
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    margin-bottom: 0;
+  }
+
   .list-section {
     padding: 1rem;
   }
