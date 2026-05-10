@@ -10,6 +10,13 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 const db = new DatabaseSync(DB_PATH);
 db.exec("PRAGMA foreign_keys = ON;");
 
+// Migration: voeg status kolom toe als die nog niet bestaat
+try {
+  db.exec("ALTER TABLE logbook_entries ADD COLUMN status TEXT NOT NULL DEFAULT 'concept' CHECK (status IN ('concept', 'definitief'))");
+} catch (err) {
+  // Kolom bestaat al, geen probleem
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,6 +58,7 @@ db.exec(`
     diesel_remaining TEXT,
     damage TEXT,
     notes TEXT,
+    status TEXT NOT NULL DEFAULT 'concept' CHECK (status IN ('concept', 'definitief')),
     created_by INTEGER NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
@@ -94,8 +102,8 @@ const statements = {
       entry_date, skipper_id, crew_members,
       wind_force, motor_hours_start, motor_hours_end, departure_port, arrival_port,
       diesel_taken, water_remaining, diesel_remaining,
-      damage, notes, created_by, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      damage, notes, status, created_by, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   getLogbookEntry: db.prepare(`
     SELECT * FROM logbook_entries WHERE id = ?
@@ -111,7 +119,7 @@ const statements = {
       entry_date = ?, skipper_id = ?,
       crew_members = ?, wind_force = ?, motor_hours_start = ?, motor_hours_end = ?,
       departure_port = ?, arrival_port = ?, diesel_taken = ?,
-      water_remaining = ?, diesel_remaining = ?, damage = ?, notes = ?,
+      water_remaining = ?, diesel_remaining = ?, damage = ?, notes = ?, status = ?,
       updated_at = ?
     WHERE id = ?
   `),
@@ -190,6 +198,7 @@ function createLogbookEntry(entry) {
     entry.dieselRemaining || null,
     entry.damage || null,
     entry.notes || null,
+    entry.status || 'concept',
     entry.createdBy,
     now,
     now
@@ -221,6 +230,7 @@ function updateLogbookEntry(id, entry) {
     entry.dieselRemaining || null,
     entry.damage || null,
     entry.notes || null,
+    entry.status || 'concept',
     now,
     id
   );

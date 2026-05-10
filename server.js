@@ -106,6 +106,7 @@ const server = http.createServer(async (req, res) => {
           dieselRemaining: body.dieselRemaining,
           damage: body.damage,
           notes: body.notes,
+          status: body.status || 'concept',
           createdBy: body.createdBy || 1,
         });
         json(res, 201, { success: true, data: entry });
@@ -153,6 +154,7 @@ const server = http.createServer(async (req, res) => {
           dieselRemaining: body.dieselRemaining,
           damage: body.damage,
           notes: body.notes,
+          status: body.status || 'concept',
         });
         json(res, 200, { success: true, data: entry });
       } catch (error) {
