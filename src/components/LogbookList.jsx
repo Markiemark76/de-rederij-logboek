@@ -49,29 +49,31 @@ function LogbookList({ entries }) {
             {expandedId === entry.id && (
               <div className="entry-details">
                 {entry.notes && (
-                  <div className="detail-section">
+                  <div className="detail-section full-width">
                     <strong>Opmerkingen:</strong>
                     <p>{entry.notes}</p>
                   </div>
                 )}
-                {entry.diesel_taken && (
-                  <div className="detail-section">
-                    <strong>Diesel getankt:</strong> {entry.diesel_taken}L
-                    {entry.motor_hours_diesel_refuel && ` bij ${entry.motor_hours_diesel_refuel}h`}
-                  </div>
-                )}
-                {entry.water_remaining && (
-                  <div className="detail-section">
-                    <strong>Water voorraad eind:</strong> {entry.water_remaining}%
-                  </div>
-                )}
-                {entry.diesel_remaining && (
-                  <div className="detail-section">
-                    <strong>Diesel voorraad eind:</strong> {entry.diesel_remaining}
-                  </div>
-                )}
+                <div className="detail-row">
+                  {entry.diesel_taken && (
+                    <div className="detail-section">
+                      <strong>Diesel getankt:</strong> {entry.diesel_taken}L
+                      {entry.motor_hours_diesel_refuel && ` bij ${entry.motor_hours_diesel_refuel}h`}
+                    </div>
+                  )}
+                  {entry.water_remaining && (
+                    <div className="detail-section">
+                      <strong>Water bij vertrek:</strong> {entry.water_remaining}%
+                    </div>
+                  )}
+                  {entry.diesel_remaining && (
+                    <div className="detail-section">
+                      <strong>Diesel bij vertrek:</strong> {entry.diesel_remaining}%
+                    </div>
+                  )}
+                </div>
                 {entry.damage && (
-                  <div className="detail-section damage">
+                  <div className="detail-section damage full-width">
                     <strong>⚠️ Schade:</strong>
                     <p>{entry.damage}</p>
                   </div>

@@ -108,6 +108,8 @@
   font-family: inherit;
   background: transparent;
   cursor: pointer;
+  color: #202124;
+  -webkit-text-fill-color: #202124;
 }
 
 .date-input-wrapper input:focus {
@@ -122,6 +124,13 @@
 .date-input-wrapper input::-webkit-outer-spin-button,
 .date-input-wrapper input::-webkit-inner-spin-button {
   display: none;
+}
+
+.date-input-wrapper input::-webkit-autofill,
+.date-input-wrapper input::-webkit-autofill:hover,
+.date-input-wrapper input::-webkit-autofill:focus {
+  -webkit-text-fill-color: #202124;
+  -webkit-box-shadow: 0 0 0px 1000px white inset;
 }
 
 .submit-button {

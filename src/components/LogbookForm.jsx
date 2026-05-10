@@ -89,7 +89,7 @@ function LogbookForm({ members, onEntryAdded }) {
 
   // Auto-fill motorHoursStart from last entry when creating new entry
   useEffect(() => {
-    if (entryId) return; // Only for new entries
+    if (entryId || formData.motorHoursStart) return; // Only for new entries without motorHoursStart
 
     const loadLastMotorHours = async () => {
       try {
@@ -99,13 +99,13 @@ function LogbookForm({ members, onEntryAdded }) {
         if (result.success && result.data.length > 0) {
           // Find most recent DEFINITIEF entry with motor_hours_end
           const lastEntry = result.data
-            .filter(e => e.status === 'definitief' && e.motor_hours_end)
+            .filter(e => e.status === 'definitief' && e.motor_hours_end != null && e.motor_hours_end !== '')
             .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
 
-          if (lastEntry) {
+          if (lastEntry && lastEntry.motor_hours_end) {
             setFormData(prev => ({
               ...prev,
-              motorHoursStart: lastEntry.motor_hours_end.toString(),
+              motorHoursStart: parseFloat(lastEntry.motor_hours_end).toString(),
             }));
           }
         }
@@ -114,8 +114,9 @@ function LogbookForm({ members, onEntryAdded }) {
       }
     };
 
-    loadLastMotorHours();
-  }, [entryId]);
+    // Small delay to ensure form is ready on mobile
+    setTimeout(loadLastMotorHours, 100);
+  }, []);
 
 // Auto-save interval effect
   useEffect(() => {
@@ -157,6 +158,20 @@ function LogbookForm({ members, onEntryAdded }) {
   };
 
   const handleNewEntry = async () => {
+    // Validate required fields
+    if (!formData.skipperId) {
+      setError('Kies een schipper voordat je opslaat');
+      return;
+    }
+    if (!formData.departureDate) {
+      setError('Vul een vertrekdag in');
+      return;
+    }
+    if (!formData.arrivalDate) {
+      setError('Vul een aankomstdag in');
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
@@ -177,7 +192,14 @@ function LogbookForm({ members, onEntryAdded }) {
         setStatus('concept');
         setLastSaved(new Date());
       } else {
-        setError(result.error || 'Fout bij opslaan');
+        // Better error messages
+        if (result.error?.includes('foreign key')) {
+          setError('Fout: Controleer of je een geldige schipper hebt geselecteerd');
+        } else if (result.error?.includes('UNIQUE')) {
+          setError('Dit logboek bestaat al');
+        } else {
+          setError(result.error || 'Fout bij opslaan');
+        }
       }
     } catch (err) {
       console.error('Error:', err);

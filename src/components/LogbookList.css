@@ -79,8 +79,18 @@
   font-size: 0.9rem;
 }
 
+.detail-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
 .detail-section {
   color: #5f6368;
+}
+
+.detail-section.full-width {
+  grid-column: 1 / -1;
 }
 
 .detail-section strong {
