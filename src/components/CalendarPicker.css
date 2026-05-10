@@ -328,14 +328,126 @@
   box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
 }
 
-/* Responsive */
+/* Responsive - MOBIEL */
 @media (max-width: 768px) {
+  .calendar-picker {
+    padding: 15px;
+  }
+
+  .calendar-picker h2 {
+    font-size: 18px;
+    margin-bottom: 15px;
+  }
+
+  .member-selector {
+    margin-bottom: 15px;
+  }
+
+  .member-selector label {
+    font-size: 13px;
+  }
+
+  .member-selector select {
+    font-size: 13px;
+    padding: 7px;
+  }
+
+  /* Kalender compacter */
+  .calendar-grid {
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+
+  .day-header {
+    font-size: 11px;
+    padding: 4px 0;
+    font-weight: 600;
+  }
+
   .calendar-day {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+
+  .day-number {
     font-size: 12px;
+    font-weight: 700;
+  }
+
+  .day-points,
+  .day-skipper {
+    font-size: 8px;
+    margin-top: 1px;
+  }
+
+  .calendar-legend {
+    gap: 10px;
+    padding: 8px;
+    font-size: 11px;
+  }
+
+  .legend-box {
+    width: 16px;
+    height: 16px;
+  }
+
+  .calendar-header {
+    margin-bottom: 8px;
+  }
+
+  .calendar-header h3 {
+    font-size: 16px;
+    min-width: 120px;
+  }
+
+  .calendar-header button {
+    padding: 4px 8px;
+    font-size: 14px;
   }
 
   .selection-summary {
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
+    padding: 10px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .member-details {
+    padding: 12px;
+    gap: 12px;
+    margin-top: 15px;
+  }
+
+  .member-info {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .member-info p {
+    margin: 3px 0;
+  }
+
+  .notes-section label {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .notes-section textarea {
+    font-size: 12px;
+    padding: 6px;
+    rows: 2;
+  }
+
+  .action-buttons {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn-reserve,
+  .btn-clear {
+    padding: 10px 16px;
+    font-size: 13px;
   }
 }
