@@ -1,0 +1,118 @@
+.logbook-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.logbook-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.logbook-table thead {
+  background: #f8f9fa;
+  border-bottom: 2px solid #dadce0;
+}
+
+.logbook-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #202124;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.logbook-table tbody tr {
+  border-bottom: 1px solid #e8e8e8;
+  transition: background-color 0.15s;
+}
+
+.logbook-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.logbook-table td {
+  padding: 1rem;
+  color: #5f6368;
+  font-size: 0.9rem;
+}
+
+.logbook-table td.date {
+  font-weight: 500;
+  color: #1a73e8;
+}
+
+.logbook-table td.skipper {
+  font-weight: 600;
+  color: #202124;
+}
+
+.logbook-table td.time {
+  font-family: 'Courier New', monospace;
+  color: #5f6368;
+}
+
+.logbook-table td.route {
+  max-width: 200px;
+  word-break: break-word;
+}
+
+.logbook-table td.motor {
+  font-family: 'Courier New', monospace;
+  color: #34a853;
+}
+
+.logbook-table td.notes {
+  color: #5f6368;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.summary {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #5f6368;
+}
+
+.summary p {
+  margin: 0;
+}
+
+.summary strong {
+  color: #1a73e8;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .logbook-table th,
+  .logbook-table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .logbook-table th {
+    font-size: 0.75rem;
+  }
+
+  .logbook-table td.notes {
+    max-width: 100px;
+  }
+
+  .logbook-table td.route {
+    max-width: 120px;
+  }
+}
